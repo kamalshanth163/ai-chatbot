@@ -145,16 +145,16 @@ const App = () => {
             ) : (
                 messages.map((msg, index) => (
                 <div className={`message ${msg.sender}`} key={index}>
-                    {msg.isHtml ? (
+                    {/* {msg.isHtml ? ( */}
                         <div 
                             className={`chat ${msg.sender === "user" ? "userChat" : "botChat"}`}
                             dangerouslySetInnerHTML={{ __html: msg.text }}
                         />
-                    ) : (
+                    {/* ) : (
                         <div className={`chat ${msg.sender === "user" ? "userChat" : "botChat"}`}>
                             {msg.text}
                         </div>
-                    )}
+                    )} */}
                 </div>
                 ))
             )}
