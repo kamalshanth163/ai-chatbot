@@ -80,6 +80,10 @@ body {
   word-wrap: break-word;
 }
 
+.userChat a {
+  color: rgb(0, 89, 97);
+}
+
 .botChat {
   background-color: whitesmoke;
   color: black;
