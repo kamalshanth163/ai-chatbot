@@ -4,3 +4,7 @@
   box-sizing: border-box;
   font-family: 'Kanit', sans-serif;
 }
+
+a {
+  color: rgb(8, 164, 185);
+}

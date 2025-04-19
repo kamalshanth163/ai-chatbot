@@ -6,10 +6,17 @@ import Questions from "./data/Questions";
 const App = () => {
     const [messages, setMessages] = useState([]);
     const [userInput, setUserInput] = useState("");
-    const [currentMode, setCurrentMode] = useState("Default");
+    const [previousUserInput, setPreviousUserInput] = useState("");
+
+    const [currentChatMode, setCurrentChatMode] = useState("Default");
+    const [currentTrainMode, setCurrentTrainMode] = useState("Question");
+
     const conversationRef = useRef(null);
+
     const greetings = new Greetings();
     const questions = new Questions();
+
+    const [learnings, setLearnings] = useState(new Map());
 
     // Scroll to bottom of conversation
     useEffect(() => {
@@ -27,36 +34,58 @@ const App = () => {
 
     const handleSend = useCallback(() => {
         if (!userInput.trim()) return;
-
+    
         // Display user input
+        setPreviousUserInput(userInput);
         appendMessage("user", userInput);
-
+    
         setTimeout(() => {
-            if (currentMode === "Training") {
-                appendMessage("bot", `Training mode: Expected reply for "${userInput}"`);
-                setCurrentMode("Default");
+            if (currentChatMode === "Training") {
+                if (currentTrainMode === "Question") {
+                    appendMessage("bot", `Please provide your expected reply for "${userInput}"`);
+                    setCurrentTrainMode("Answer");
+                } else {
+                    appendMessage("bot", `Your expected reply for "${previousUserInput}" is "${userInput}"`);
+                    appendMessage("bot", `Please provide another question.`);
+
+                    // Update learnings Map with new key-value pair
+                    setLearnings(prevLearnings => {
+                        const newLearnings = new Map(prevLearnings);
+                        newLearnings.set(previousUserInput.toLowerCase().trim(), userInput);
+                        return newLearnings;
+                    });
+                    
+                    setCurrentTrainMode("Question");
+                }
             } else {
-                // Check greetings first
+                // First check learnings
+                const learnedResponse = learnings.get(userInput.toLowerCase().trim());
+                if (learnedResponse) {
+                    appendMessage("bot", learnedResponse);
+                    return;
+                }
+    
+                // Then check greetings
                 const greetingReply = greetings.getReply(userInput);
                 if (greetingReply) {
                     appendMessage("bot", greetingReply);
                     return;
                 }
-
+    
                 // Then check questions
                 const questionReply = questions.getReply(userInput);
                 if (questionReply) {
                     appendMessage("bot", questionReply);
                     return;
                 }
-
-                // Default response if no matches
+    
+                // Default response
                 appendMessage("bot", "I didn't understand that. Can you try asking something else?");
             }
         }, 500);
-
+    
         setUserInput("");
-    });
+    }, [currentChatMode, currentTrainMode, previousUserInput, learnings, appendMessage]);
 
     const handleKeyPress = (e) => {
         if (e.key === "Enter") {
@@ -65,19 +94,14 @@ const App = () => {
     };
 
     const startTraining = () => {
-        setCurrentMode("Training");
-        appendMessage("bot", "Training mode started. What would be your expected reply?");
+        setCurrentChatMode("Training");
+        appendMessage("bot", "Training started. Please provide a question.");
     };
 
     const stopTraining = () => {
-        setCurrentMode("Default");
+        setCurrentChatMode("Default");
         appendMessage("bot", "Training has stopped. Say or ask something else.");
     };
-
-    // const selectSubject = (subject) => {
-    //     setCurrentMode("Default");
-    //     appendMessage("bot", `You selected: ${subject}`);
-    // }
 
     // Handle task option clicks
     useEffect(() => {
@@ -103,13 +127,24 @@ const App = () => {
         <div className="App">
           {/* Header */}
           <div className="header">
-            <h1>AI Chatbot</h1>
+            <h1>AI Chatbot, A Student Assistant</h1>
           </div>
           
           {/* Chat Area */}
           <div ref={conversationRef} className="conversation" id="conversation">
-              {messages.map((msg, index) => (
-                  <div className={`message ${msg.sender}`} key={index}>
+            {messages.length === 0 ? (
+                <div className="welcome-container">
+                    <div className="welcome-text">Welcome to "Student Assistant AI Chatbot"</div>
+                    <ul>
+                        <li>Greet</li>
+                        <li>View your subjects</li>
+                        <li>View tasks of your subject</li>
+                        <li>Train the chatbot</li>
+                    </ul>
+                </div>
+            ) : (
+                messages.map((msg, index) => (
+                <div className={`message ${msg.sender}`} key={index}>
                     {msg.isHtml ? (
                         <div 
                             className={`chat ${msg.sender === "user" ? "userChat" : "botChat"}`}
@@ -120,9 +155,10 @@ const App = () => {
                             {msg.text}
                         </div>
                     )}
-                  </div>                    
-              ))}
-          </div>
+                </div>
+                ))
+            )}
+        </div>
 
           {/* Input Area */}
           <div className="input-area">
@@ -140,14 +176,14 @@ const App = () => {
               <button 
                   onClick={startTraining}
                   id="trainMeBtn" 
-                  style={{display: currentMode === "Training" ? "none" : "block" }}
+                  style={{display: currentChatMode === "Training" ? "none" : "block" }}
               >
                   Train Me
               </button>
               <button 
                   onClick={stopTraining} 
                   id="stopTrainingBtn" 
-                  style={{display: currentMode === "Training" ? "block" : "none" }}
+                  style={{display: currentChatMode === "Training" ? "block" : "none" }}
               >
                   Stop Training
               </button>
