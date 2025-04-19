@@ -4,32 +4,3 @@
   box-sizing: border-box;
   font-family: 'Kanit', sans-serif;
 }
-
-body {
-  padding: 40px;
-  /* background: rgb(245, 245, 245); */
-}
-.chat-area  {
-  position: fixed;
-  bottom: 40px;
-  right: 60px;
-}
-#closeChatBtn {
-  display: none;
-}
-.btn {
-  border-radius: 50px;
-  font-size: 20px;
-}
-
-#chatFrame  {
-  border: 0px solid #111;
-  width: 600px;
-  height: 800px;
-  position: fixed;
-  bottom: 100px;
-  right: 60px;
-  border-radius: 40px;
-  box-shadow: 5px 10px 20px #888888;
-  display: none;
-}

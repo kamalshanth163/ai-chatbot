@@ -117,19 +117,29 @@ body {
   padding: 10px 20px;
 }
 
-#packageTypes li,
-#packages li {
+#subjects li,
+#tasks li {
   border-radius: 30px;
   border: none;
   padding: 10px;
   background: #111;
   color: white;
-  font-size: 24px;
+  font-size: 16px;
   cursor: pointer;
   margin: 10px;
   text-decoration: none;
   list-style: none;
   padding: 10px 20px;
+  font-weight: 200;
+}
+
+li h3 {
+  font-size: 16px;
+}
+
+li h4 {
+  font-size: 14px;
+  font-weight: 200;
 }
 
 #trainMeBtn {
@@ -148,4 +158,29 @@ body {
 
 #stopTrainingBtn:hover {
   background-color: #cb2a3a; /* Darker red on hover */
+}
+
+.chat-area  {
+  position: fixed;
+  bottom: 40px;
+  right: 60px;
+}
+#closeChatBtn {
+  display: none;
+}
+.btn {
+  border-radius: 50px;
+  font-size: 20px;
+}
+
+#chatFrame  {
+  border: 0px solid #111;
+  width: 600px;
+  height: 800px;
+  position: fixed;
+  bottom: 100px;
+  right: 60px;
+  border-radius: 40px;
+  box-shadow: 5px 10px 20px #888888;
+  display: none;
 }

@@ -1,58 +1,67 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import "./App.css";
+import Greetings from "./data/Greetings";
+import Questions from "./data/Questions";
 
 const App = () => {
     const [messages, setMessages] = useState([]);
     const [userInput, setUserInput] = useState("");
-    const [previousUserInput, setPreviousUserInput] = useState("");
-    const [previousCount, setPreviousCount] = useState(0);
     const [currentMode, setCurrentMode] = useState("Default");
+    const conversationRef = useRef(null);
+    const greetings = new Greetings();
+    const questions = new Questions();
+
+    // Scroll to bottom of conversation
+    useEffect(() => {
+        if (conversationRef.current) {
+            conversationRef.current.scrollTop = conversationRef.current.scrollHeight;
+        }
+    }, [messages]);
 
     const appendMessage = (sender, text) => {
         setMessages((prevMessages) => [
             ...prevMessages,
-            { sender, text },
+            { sender, text, isHtml: typeof text === 'string' && text.startsWith('<') }
         ]);
     };
 
-    const handleSend = () => {
+    const handleSend = useCallback(() => {
         if (!userInput.trim()) return;
-
-        // Check for repeating inputs
-        if (userInput.toLowerCase().replace(/\s/g, "") === previousUserInput.toLowerCase().replace(/\s/g, "")) {
-            setPreviousCount(previousCount + 1);
-        } else {
-            setPreviousUserInput(userInput);
-            setPreviousCount(1);
-        }
 
         // Display user input
         appendMessage("user", userInput);
 
-        if (previousCount === 2) {
-            appendMessage("bot", "Hmm.. Sounds like you're repeating yourself");
-        } else if (previousCount === 3) {
-            appendMessage("bot", "Please don't waste my time..");
-        } else if (previousCount === 4) {
-            appendMessage("bot", "Are we really doing this??");
-        } else if (previousCount === 5) {
-            appendMessage("bot", "I am done!!");
-        } else if (previousCount >= 6) {
-            appendMessage("bot", "#GoHome");
-        } else {
-            // Handle bot response
-            setTimeout(() => {
-                if (currentMode === "Training") {
-                    appendMessage("bot", `Training mode: Expected reply for "${previousUserInput}" is "${userInput}"`);
-                    setCurrentMode("Default");
-                } else {
-                    // Simulate bot response
-                    appendMessage("bot", `You said: "${userInput}"`);
+        setTimeout(() => {
+            if (currentMode === "Training") {
+                appendMessage("bot", `Training mode: Expected reply for "${userInput}"`);
+                setCurrentMode("Default");
+            } else {
+                // Check greetings first
+                const greetingReply = greetings.getReply(userInput);
+                if (greetingReply) {
+                    appendMessage("bot", greetingReply);
+                    return;
                 }
-            }, 1000);
-        }
+
+                // Then check questions
+                const questionReply = questions.getReply(userInput);
+                if (questionReply) {
+                    appendMessage("bot", questionReply);
+                    return;
+                }
+
+                // Default response if no matches
+                appendMessage("bot", "I didn't understand that. Can you try asking something else?");
+            }
+        }, 500);
 
         setUserInput("");
+    });
+
+    const handleKeyPress = (e) => {
+        if (e.key === "Enter") {
+            handleSend();
+        }
     };
 
     const startTraining = () => {
@@ -65,28 +74,52 @@ const App = () => {
         appendMessage("bot", "Training has stopped. Say or ask something else.");
     };
 
-    // const selectOption = (option) => {
-    //     appendMessage("user", option);
-    //     setTimeout(() => {
-    //         appendMessage("bot", `You selected: "${option}"`);
-    //     }, 1000);
-    // };
+    // const selectSubject = (subject) => {
+    //     setCurrentMode("Default");
+    //     appendMessage("bot", `You selected: ${subject}`);
+    // }
+
+    // Handle task option clicks
+    useEffect(() => {
+        const handleClick = (e) => {
+            if (e.target.classList.contains('task-types')) return;
+            
+            const optionElement = e.target.closest('[data-option]');
+            if (optionElement) {
+                const option = optionElement.getAttribute('data-option');
+                setUserInput(option);
+                handleSend();
+            }
+        };
+
+        const conversation = conversationRef.current;
+        if (conversation) {
+            conversation.addEventListener('click', handleClick);
+            return () => conversation.removeEventListener('click', handleClick);
+        }
+    }, [handleSend]);
 
     return (
         <div className="App">
-
           {/* Header */}
           <div className="header">
             <h1>AI Chatbot</h1>
           </div>
           
           {/* Chat Area */}
-          <div id="conversation" className="conversation">
+          <div ref={conversationRef} className="conversation" id="conversation">
               {messages.map((msg, index) => (
-                  <div className="message" key={index}>
-                    <div className={`chat ${msg.sender === "user" ? "userChat" : "botChat"}`}>
-                        {msg.text}
-                    </div>
+                  <div className={`message ${msg.sender}`} key={index}>
+                    {msg.isHtml ? (
+                        <div 
+                            className={`chat ${msg.sender === "user" ? "userChat" : "botChat"}`}
+                            dangerouslySetInnerHTML={{ __html: msg.text }}
+                        />
+                    ) : (
+                        <div className={`chat ${msg.sender === "user" ? "userChat" : "botChat"}`}>
+                            {msg.text}
+                        </div>
+                    )}
                   </div>                    
               ))}
           </div>
@@ -94,19 +127,28 @@ const App = () => {
           {/* Input Area */}
           <div className="input-area">
               <input
-                  id="userInput"
                   type="text"
+                  id="userInput"
                   value={userInput}
                   onChange={(e) => setUserInput(e.target.value)}
+                  onKeyPress={handleKeyPress}
                   placeholder="Say or ask something..."
               />
-              <button id="sendBtn" onClick={handleSend}>
+              <button onClick={handleSend} id="sendBtn">
                   Send
               </button>
-              <button id="trainMeBtn" onClick={startTraining}>
+              <button 
+                  onClick={startTraining}
+                  id="trainMeBtn" 
+                  style={{display: currentMode === "Training" ? "none" : "block" }}
+              >
                   Train Me
               </button>
-              <button id="stopTrainingBtn" onClick={stopTraining}>
+              <button 
+                  onClick={stopTraining} 
+                  id="stopTrainingBtn" 
+                  style={{display: currentMode === "Training" ? "block" : "none" }}
+              >
                   Stop Training
               </button>
           </div>
