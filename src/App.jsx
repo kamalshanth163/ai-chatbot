@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import "./App.css";
 import Greetings from "./data/Greetings";
 import Questions from "./data/Questions";
+import Login from "./auth/Login";
+import Register from "./auth/Register";
 
 const App = () => {
     const [messages, setMessages] = useState([]);
@@ -17,6 +19,31 @@ const App = () => {
     const questions = new Questions();
 
     const [learnings, setLearnings] = useState(new Map());
+
+    // Check if the user is logged in from localStorage
+    const [isLoggedIn, setIsLoggedIn] = useState(
+        localStorage.getItem("isLoggedIn") === "true"
+    );
+    const [isRegistering, setIsRegistering] = useState(false);
+
+    const handleLogin = () => {
+        setIsLoggedIn(true);
+        localStorage.setItem("isLoggedIn", "true"); // Persist login state
+    };
+
+    const handleLogout = () => {
+        setIsLoggedIn(false);
+        localStorage.removeItem("isLoggedIn"); // Clear login state
+    };
+
+    const toggleToRegister = () => {
+        setIsRegistering(true);
+    };
+
+    const toggleToLogin = () => {
+        setIsRegistering(false);
+    };
+
 
     // Scroll to bottom of conversation
     useEffect(() => {
@@ -123,12 +150,26 @@ const App = () => {
         }
     }, [handleSend]);
 
+
+    if (!isLoggedIn) {
+        return isRegistering ? (
+          <Register onRegister={toggleToLogin} toggleToLogin={toggleToLogin} />
+        ) : (
+          <Login onLogin={handleLogin} toggleToRegister={toggleToRegister} />
+        );
+    }
+
     return (
         <div className="App">
           {/* Header */}
           <div className="header">
             <h1>AI Chatbot, A Student Assistant</h1>
+            <button className="logout-button" onClick={handleLogout}>
+                Logout
+            </button>
           </div>
+
+          <hr />
           
           {/* Chat Area */}
           <div ref={conversationRef} className="conversation" id="conversation">
